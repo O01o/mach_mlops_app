@@ -1,1 +1,10 @@
-openapi: 3.1.0
+services:
+  swagger:
+    build:
+      context: ./swagger
+    image: mach-mlops-swagger:latest
+    container_name: mach-mlops-swagger
+    ports:
+      - "18181:80"
+    restart: always
+  

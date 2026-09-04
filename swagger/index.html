@@ -12,8 +12,13 @@
   <script src="./swagger-ui-standalone-preset.js"></script>
   <script>
     window.onload = () => {
+      const params = new URLSearchParams(window.location.search);
+      const spec = params.get("spec") || "openapi.yaml";
+      const specUrl = new URL(spec, window.location.href);
+      specUrl.searchParams.set("v", Date.now().toString());
+
       SwaggerUIBundle({
-        url: "./openapi.yaml",
+        url: specUrl.toString(),
         dom_id: "#swagger-ui",
         deepLinking: true,
         persistAuthorization: true,
