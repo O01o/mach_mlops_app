@@ -1,0 +1,88 @@
+openapi: 3.1.0
+
+info:
+  title: MACH MLOps API
+  description: This is a sample API description.
+  version: 0.1.0
+
+tags:
+  - name: Train
+  - name: Evaluate
+
+paths:
+  /:
+    post:
+      tags:
+        - Train
+      summary: Params endpoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParamsRequest'
+      responses:
+        "204":
+          description: Request Successful
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+    head:
+      tags:
+        - Train
+      summary: Train endpoint
+      responses:
+        "204":
+          description: Request Successful
+        "404":
+          $ref: "#/components/responses/NotFoundResponse"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+components:
+  responses:
+    NotFoundResponse:
+      description: Resource not found
+      content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    ErrorResponse:
+      description: An error occurred
+      content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  schemas:
+    ParamsRequest:
+      type: object
+      required:
+        - batch_size
+        - epoch
+      properties:
+        batch_size:
+          type: integer
+          example: 32
+        epoch:
+          type: integer
+          example: 10
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: RESOURCE_NOT_FOUND
+        message:
+          type: string
+          example: The requested run was not found.
+        details:
+          type:
+            - object
+            - "null"
+          additionalProperties: true
