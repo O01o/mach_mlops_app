@@ -1,4 +1,12 @@
 services:
+  api:
+    build:
+      context: ./api
+    image: mach-mlops-api:latest
+    container_name: mach-mlops-api
+    ports:
+      - "18180:8080"
+    restart: always
   swagger:
     build:
       context: ./swagger
@@ -7,4 +15,3 @@ services:
     ports:
       - "18181:80"
     restart: always
-  
