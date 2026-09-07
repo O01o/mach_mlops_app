@@ -1,6 +1,7 @@
 package r
 
 import (
+	"mach-mlops/internal/core"
 	h "mach-mlops/internal/handler"
 	sem "mach-mlops/internal/service/impl"
 	"net/http"
@@ -11,7 +12,8 @@ import (
 func NewHTTPAPIHandler() *http.Server {
 	r := mux.NewRouter()
 
-	hh := h.NewAPIHandler(sem.NewTrainAPIService())
+	gcloud := core.NewGCloudConfig()
+	hh := h.NewAPIHandler(sem.NewTrainAPIService(gcloud))
 	r.HandleFunc("/", hh.RequestParams).Methods("POST")
 	r.HandleFunc("/", hh.RequestExecute).Methods("HEAD")
 
