@@ -1,6 +1,8 @@
 
 FROM golang:1.25-alpine AS backend
 
+RUN apk add --no-cache ca-certificates
+
 WORKDIR /src
 
 COPY go.mod go.sum ./
@@ -21,6 +23,7 @@ RUN CGO_ENABLED=0 GOOS=linux \
 
 FROM scratch
 
+COPY --from=backend /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=backend /out/mach-mlops /mach-mlops
 
 EXPOSE 8080
