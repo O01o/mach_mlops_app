@@ -2,6 +2,7 @@ services:
   api:
     build:
       context: ./api
+      dockerfile: ./container/api/Dockerfile
     image: mach-mlops-api:latest
     container_name: mach-mlops-api
     ports:

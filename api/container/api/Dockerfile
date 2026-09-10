@@ -3,12 +3,13 @@ FROM golang:1.25-alpine AS backend
 
 WORKDIR /src
 
-COPY ./src/go.mod ./src/go.sum ./
+COPY go.mod go.sum ./
 RUN go mod download
 
 ENV CGO_ENABLED=0 GOOS=linux
 
-COPY src/ .
+COPY cmd/ ./cmd/
+COPY internal/ ./internal/
 
 RUN CGO_ENABLED=0 GOOS=linux \
     go build \
