@@ -34,6 +34,7 @@ func (h *apiHandler) RequestParams(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *apiHandler) RequestExecute(w http.ResponseWriter, r *http.Request) {
@@ -42,4 +43,5 @@ func (h *apiHandler) RequestExecute(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.WriteHeader(http.StatusNoContent)
 }
