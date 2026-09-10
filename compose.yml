@@ -5,6 +5,8 @@ services:
       dockerfile: ./container/api/Dockerfile
     image: mach-mlops-api:latest
     container_name: mach-mlops-api
+    env_file:
+      - ./api/.env
     ports:
       - "18180:8080"
     restart: always
