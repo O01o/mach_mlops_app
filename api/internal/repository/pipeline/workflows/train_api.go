@@ -30,7 +30,15 @@ func (r *trainAPIRepository) RequestParams(params sc.TrainAPIParams) error {
 		r.location,
 		"mlops-publish-train-params",
 	)
-	body, err := json.MarshalIndent(params, "", "  ")
+	body, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+	argument, err := json.Marshal(sc.TrainAPIParamsWorkflowsArgument{Message: string(body)})
+	if err != nil {
+		return err
+	}
+	body, err = json.MarshalIndent(sc.TrainAPIParamsWorkflows{Argument: string(argument)}, "", "  ")
 	if err != nil {
 		return err
 	}

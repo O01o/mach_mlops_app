@@ -5,6 +5,10 @@ type TrainAPIParams struct {
 	Epoch     int `json:"epoch"`
 }
 
+type TrainAPIParamsWorkflowsArgument struct {
+	Message string `json:"message"`
+}
+
 type TrainAPIParamsWorkflows struct {
-	Argument TrainAPIParams `json:"argument"`
+	Argument string `json:"argument"`
 }
