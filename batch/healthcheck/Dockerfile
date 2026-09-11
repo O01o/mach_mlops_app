@@ -1,2 +1,2 @@
 FROM alpine:latest
-CMD ["sleep", "10"]
+CMD ["/bin/sh", "-c", "echo 'start...' && sleep 10 && echo 'finished (10s)'"]
