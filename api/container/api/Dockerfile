@@ -10,7 +10,7 @@ RUN go mod download
 
 ENV CGO_ENABLED=0 GOOS=linux
 
-COPY cmd/ ./cmd/
+COPY cmd/api/ ./cmd/api/
 COPY internal/ ./internal/
 
 RUN CGO_ENABLED=0 GOOS=linux \
