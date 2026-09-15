@@ -1,0 +1,17 @@
+apiVersion: run.googleapis.com/v1
+kind: Job
+metadata:
+  name: ${SERVICE_NAME}
+  labels:
+    environment: ${ENVIRONMENT}
+spec:
+  template:
+    spec:
+      taskCount: 1
+      parallelism: 1
+      template:
+        spec:
+          serviceAccountName: ${CLOUD_RUN_SA}
+          containers:
+            - image: ${CONTAINER_IMAGE}
+          restartPolicy: Never
