@@ -1,0 +1,117 @@
+name: Build and deploy to Cloud Run
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  LOCATION: ${{ secrets.GCLOUD_LOCATION }}
+  PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
+  REVISION_TAG: ${{ github.sha }}
+  ENVIRONMENT: production
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: swagger
+            image_name: swagger
+            context: ./swagger
+            dockerfile: ./swagger/Dockerfile
+            artifact_repo: '${{ vars.SWAGGER_ARTIFACT_REPO }}'
+            service_name: '${{ vars.SWAGGER_SERVICE_NAME }}'
+            cloud_run_sa: '${{ vars.SWAGGER_CLOUD_RUN_SA }}'
+            kind: service
+            port: 80
+          - name: api
+            image_name: api
+            context: ./api
+            dockerfile: ./api/container/api/Dockerfile
+            artifact_repo: '${{ vars.API_ARTIFACT_REPO }}'
+            service_name: '${{ vars.API_SERVICE_NAME }}'
+            cloud_run_sa: '${{ vars.API_CLOUD_RUN_SA }}'
+            kind: service
+            port: 8080
+          - name: batch
+            image_name: batch
+            context: ./batch
+            dockerfile: ./api/container/batch/Dockerfile
+            artifact_repo: '${{ vars.BATCH_ARTIFACT_REPO }}'
+            service_name: '${{ vars.BATCH_JOB_NAME }}'
+            cloud_run_sa: '${{ vars.BATCH_CLOUD_RUN_SA }}'
+            kind: job
+            port: ''
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: access_token
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ vars.WIF_SA }}
+
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Authenticate Docker to Artifact Registry
+        uses: docker/login-action@v3
+        with:
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+          registry: ${{ env.LOCATION }}-docker.pkg.dev
+
+      - name: Build and push ${{ matrix.name }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ env.LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ matrix.artifact_repo }}/${{ matrix.image_name }}:${{ env.REVISION_TAG }}
+
+      - name: Render Cloud Run Service manifest
+        if: matrix.kind == 'service'
+        env:
+          CONTAINER_IMAGE: ${{ env.LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ matrix.artifact_repo }}/${{ matrix.image_name }}:${{ env.REVISION_TAG }}
+          SERVICE_NAME: ${{ matrix.service_name }}
+          ENVIRONMENT: ${{ env.ENVIRONMENT }}
+          REVISION_TAG: ${{ env.REVISION_TAG }}
+          CLOUD_RUN_SA: ${{ matrix.cloud_run_sa }}
+          CONTAINER_PORT: ${{ matrix.port }}
+        run: envsubst < config/cicd/cloud_run/container.yaml > container-${{ matrix.name }}.yaml
+
+      - name: Deploy ${{ matrix.name }} service
+        if: matrix.kind == 'service'
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ matrix.service_name }}
+          LOCATION: ${{ env.LOCATION }}
+          project_id: ${{ env.PROJECT_ID }}
+          metadata: container-${{ matrix.name }}.yaml
+
+      - name: Render Cloud Run Job manifest
+        if: matrix.kind == 'job'
+        env:
+          CONTAINER_IMAGE: ${{ env.LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ matrix.artifact_repo }}/${{ matrix.image_name }}:${{ env.REVISION_TAG }}
+          SERVICE_NAME: ${{ matrix.service_name }}
+          ENVIRONMENT: ${{ env.ENVIRONMENT }}
+          CLOUD_RUN_SA: ${{ matrix.cloud_run_sa }}
+        run: envsubst < config/cicd/cloud_run/batch-job.yaml > ${{ matrix.name }}.yaml
+
+      - name: Deploy ${{ matrix.name }} job
+        if: matrix.kind == 'job'
+        run: gcloud run jobs replace ${{ matrix.name }}.yaml --project=${{ env.PROJECT_ID }} --LOCATION=${{ env.LOCATION }}
