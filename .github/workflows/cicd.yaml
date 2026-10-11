@@ -11,8 +11,8 @@ permissions:
   id-token: write
 
 env:
-  LOCATION: ${{ secrets.GCLOUD_LOCATION }}
-  PROJECT_ID: ${{ secrets.GCLOUD_PROJECT_ID }}
+  LOCATION: ${{ vars.GCLOUD_LOCATION || secrets.GCLOUD_LOCATION }}
+  PROJECT_ID: ${{ vars.GCLOUD_PROJECT_ID || secrets.GCLOUD_PROJECT_ID }}
   REVISION_TAG: ${{ github.sha }}
   ENVIRONMENT: production
 
@@ -59,8 +59,8 @@ jobs:
         name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
         with:
-          workload_identity_provider: ${{ vars.GCLOUD_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCLOUD_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ vars.GCLOUD_WORKLOAD_IDENTITY_PROVIDER || secrets.GCLOUD_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCLOUD_SERVICE_ACCOUNT || secrets.GCLOUD_SERVICE_ACCOUNT }}
           create_credentials_file: true
           export_environment_variables: true
 
@@ -100,7 +100,7 @@ jobs:
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: ${{ matrix.service_name }}
-          LOCATION: ${{ env.LOCATION }}
+          region: ${{ env.LOCATION }}
           project_id: ${{ env.PROJECT_ID }}
           metadata: container-${{ matrix.name }}.yaml
 
@@ -115,4 +115,4 @@ jobs:
 
       - name: Deploy ${{ matrix.name }} job
         if: matrix.kind == 'job'
-        run: gcloud run jobs replace ${{ matrix.name }}.yaml --project=${{ env.PROJECT_ID }} --LOCATION=${{ env.LOCATION }}
+        run: gcloud run jobs replace ${{ matrix.name }}.yaml --project=${{ env.PROJECT_ID }} --region=${{ env.LOCATION }}
